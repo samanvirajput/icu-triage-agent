@@ -134,7 +134,7 @@ def main():
         layout="wide",
     )
 
-    st.title("🏥 ICU Autonomous Triage & Handoff Agent")
+    st.title("ICU Autonomous Triage & Handoff Agent")
     st.caption(f"Patient **{PATIENT_ID}** · ICU Bed 4B · 67M · Admitted: CHF")
 
     col_vitals, col_log, col_brief = st.columns([1, 1.2, 1])
@@ -152,7 +152,7 @@ def main():
         c3.metric("BP", latest["bp"])
 
         st.markdown("---")
-        run_btn = st.button("🚀 Run Triage", use_container_width=True, type="primary")
+        run_btn = st.button("Run Triage", use_container_width=True, type="primary")
 
     with col_log:
         st.subheader("Agent Conversation Log")
