@@ -1,0 +1,17 @@
+[
+  {
+    "drug": "Furosemide",
+    "dose": "40mg",
+    "route": "IV",
+    "status": "scheduled",
+    "ordered_time": "12:15",
+    "administered_time": null
+  },
+  {
+    "drug": "Morphine",
+    "dose": "2mg/hr",
+    "route": "IV PCA",
+    "status": "active",
+    "started_time": "06:00"
+  }
+]

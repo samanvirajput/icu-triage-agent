@@ -1,0 +1,5 @@
+[
+  {"test": "BNP", "value": 890, "unit": "pg/mL", "flag": "HIGH", "time": "12:30"},
+  {"test": "Creatinine", "value": 1.2, "unit": "mg/dL", "flag": "NORMAL", "time": "12:30"},
+  {"test": "Potassium", "value": 4.1, "unit": "mEq/L", "flag": "NORMAL", "time": "12:30"}
+]
