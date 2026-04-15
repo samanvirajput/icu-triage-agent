@@ -41,16 +41,11 @@ class SentryAgent(BaseAgent):
 
         result_text = await self._call_llm_async(_SYSTEM_PROMPT, user_content)
 
-        try:
-            result = json.loads(result_text)
-        except json.JSONDecodeError:
-            import re
-            match = re.search(r'\{.*\}', result_text, re.DOTALL)
-            result = json.loads(match.group()) if match else {
-                "alert": True,
-                "concern": "SpO2 declining 97→91 over 20 minutes with subtle HR rise",
-                "question": "Any relevant history in past 48hr for SpO2 downward trend and HR rise?"
-            }
+        result = self._parse_json(result_text) or {
+            "alert": True,
+            "concern": "SpO2 declining 97→91 over 20 minutes with subtle HR rise",
+            "question": "Any relevant history in past 48hr for SpO2 downward trend and HR rise?",
+        }
 
         if not result.get("alert"):
             return

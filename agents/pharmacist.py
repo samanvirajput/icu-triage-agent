@@ -54,28 +54,23 @@ class PharmacistAgent(BaseAgent):
 
         result_text = await self._call_llm_async(_SYSTEM_PROMPT, user_content)
 
-        try:
-            result = json.loads(result_text)
-        except json.JSONDecodeError:
-            import re
-            match = re.search(r'\{.*\}', result_text, re.DOTALL)
-            result = json.loads(match.group()) if match else {
-                "administration_status": [
-                    {"drug": "Furosemide", "ordered": True, "administered": False, "status": "scheduled"},
-                    {"drug": "Morphine", "ordered": True, "administered": True, "status": "active"}
-                ],
-                "missed_medications": ["Furosemide 40mg IV — ordered 12:15, NOT administered"],
-                "interactions": [],
-                "clinical_brief": (
-                    "CLINICAL BRIEF — Patient 4B\n"
-                    "Priority: HIGH\n"
-                    "Finding: SpO2 declining (97→91), likely fluid-related\n"
-                    "Root cause: Furosemide 40mg IV ordered 2hr ago but NOT administered\n"
-                    "Action: Check diuretic IV line immediately\n"
-                    "Context: BNP 890 (elevated), clinical note confirms fluid overload\n"
-                    "Note: Not a sensor error — trend correlates with missed medication"
-                )
-            }
+        result = self._parse_json(result_text) or {
+            "administration_status": [
+                {"drug": "Furosemide", "ordered": True, "administered": False, "status": "scheduled"},
+                {"drug": "Morphine", "ordered": True, "administered": True, "status": "active"},
+            ],
+            "missed_medications": ["Furosemide 40mg IV — ordered 12:15, NOT administered"],
+            "interactions": [],
+            "clinical_brief": (
+                "CLINICAL BRIEF — Patient 4B\n"
+                "Priority: HIGH\n"
+                "Finding: SpO2 declining (97→91), likely fluid-related\n"
+                "Root cause: Furosemide 40mg IV ordered 2hr ago but NOT administered\n"
+                "Action: Check diuretic IV line immediately\n"
+                "Context: BNP 890 (elevated), clinical note confirms fluid overload\n"
+                "Note: Not a sensor error — trend correlates with missed medication"
+            ),
+        }
 
         broadcast_msg = A2AMessage(
             sender=self.name,

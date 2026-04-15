@@ -46,17 +46,12 @@ class HistorianAgent(BaseAgent):
 
         result_text = await self._call_llm_async(_SYSTEM_PROMPT, user_content)
 
-        try:
-            result = json.loads(result_text)
-        except json.JSONDecodeError:
-            import re
-            match = re.search(r'\{.*\}', result_text, re.DOTALL)
-            result = json.loads(match.group()) if match else {
-                "summary": "BNP elevated at 890 pg/mL confirming fluid overload. Dr. Patel noted bilateral crackles and ordered furosemide 40mg IV at 12:15.",
-                "relevant_labs": [{"test": "BNP", "value": 890, "unit": "pg/mL", "flag": "HIGH"}],
-                "relevant_notes": ["Dr. Patel 12:15: Suspected fluid overload. Ordered furosemide 40mg IV stat."],
-                "pharmacist_question": "Was the furosemide 40mg IV ordered at 12:15 actually administered? Any interactions with current infusions?"
-            }
+        result = self._parse_json(result_text) or {
+            "summary": "BNP elevated at 890 pg/mL confirming fluid overload. Dr. Patel noted bilateral crackles and ordered furosemide 40mg IV at 12:15.",
+            "relevant_labs": [{"test": "BNP", "value": 890, "unit": "pg/mL", "flag": "HIGH"}],
+            "relevant_notes": ["Dr. Patel 12:15: Suspected fluid overload. Ordered furosemide 40mg IV stat."],
+            "pharmacist_question": "Was the furosemide 40mg IV ordered at 12:15 actually administered? Any interactions with current infusions?",
+        }
 
         response_msg = A2AMessage(
             sender=self.name,
