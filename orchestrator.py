@@ -15,6 +15,7 @@ class Orchestrator:
     def __init__(self, on_message: Callable[[A2AMessage], None] | None = None):
         self.bus = MessageBus()
         self._on_message = on_message
+        self._seen: set[str] = set()
 
         if on_message:
             for agent_name in ["sentry", "historian", "pharmacist", "broadcast"]:
@@ -28,6 +29,11 @@ class Orchestrator:
         self.bus.register("broadcast", self._capture_brief)
 
     async def _intercept_message(self, message: A2AMessage):
+        # Broadcast messages hit every registered channel — deduplicate by identity.
+        key = f"{message.conversation_id}:{message.sender}:{message.intent}:{message.timestamp}"
+        if key in self._seen:
+            return
+        self._seen.add(key)
         if self._on_message:
             self._on_message(message)
 
@@ -38,6 +44,7 @@ class Orchestrator:
     async def run_triage(self, patient_id: str = "4B") -> dict:
         self.bus.clear()
         self._clinical_brief = None
+        self._seen.clear()
         conversation_id = str(uuid.uuid4())[:8]
 
         await self.sentry.run(patient_id, conversation_id)

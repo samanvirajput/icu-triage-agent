@@ -17,24 +17,23 @@ from orchestrator import Orchestrator
 
 PATIENT_ID = "4B"
 
-AGENT_COLORS = {
-    "sentry": "#4FC3F7",
-    "historian": "#81C784",
-    "pharmacist": "#FFB74D",
-}
-
 AGENT_ICONS = {
-    "sentry": "🔵",
-    "historian": "🟢",
-    "pharmacist": "🟠",
+    "sentry": "●",
+    "historian": "●",
+    "pharmacist": "●",
 }
 
 INTENT_BADGES = {
-    "alert": "🚨",
-    "query": "❓",
-    "response": "📋",
-    "clinical_brief": "📄",
+    "alert": "alert",
+    "query": "query",
+    "response": "response",
+    "clinical_brief": "brief",
 }
+
+
+def _load_css():
+    css = (Path(__file__).parent / "static" / "style.css").read_text()
+    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 
 def build_vitals_dataframe() -> pd.DataFrame:
@@ -44,72 +43,27 @@ def build_vitals_dataframe() -> pd.DataFrame:
     return df
 
 
-def render_clinical_brief(brief: dict):
-    text = brief.get("clinical_brief", "")
-    missed = brief.get("missed_medications", [])
-    interactions = brief.get("interactions", [])
-
-    priority = "HIGH"
-    if "Priority: HIGH" in text:
-        priority = "HIGH"
-    elif "Priority: MEDIUM" in text:
-        priority = "MEDIUM"
-    else:
-        priority = "LOW"
-
-    color = {"HIGH": "#FF4444", "MEDIUM": "#FFA500", "LOW": "#44BB44"}.get(priority, "#888")
-
-    st.markdown(
-        f"""
-        <div style="
-            border: 2px solid {color};
-            border-radius: 10px;
-            padding: 16px;
-            background: #1a1a2e;
-            font-family: monospace;
-        ">
-        <h3 style="color:{color}; margin-top:0;">
-            CLINICAL BRIEF — Patient {PATIENT_ID}
-        </h3>
-        <pre style="color:#eee; white-space:pre-wrap; font-size:13px;">{text}</pre>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    if missed:
-        st.error("**Missed Medications:**\n" + "\n".join(f"- {m}" for m in missed))
-
-    if interactions:
-        st.warning("**Drug Interactions:**\n" + "\n".join(f"- {i}" for i in interactions))
-    else:
-        st.success("No drug interactions flagged.")
-
-
 def render_message_card(msg: dict):
-    sender = msg.get("sender", "unknown")
+    sender   = msg.get("sender", "unknown")
     receiver = msg.get("receiver", "")
-    intent = msg.get("intent", "")
-    ts = msg.get("timestamp", "")
-    payload = msg.get("payload", {})
+    intent   = msg.get("intent", "")
+    ts       = msg.get("timestamp", "")
+    payload  = msg.get("payload", {})
 
-    icon = AGENT_ICONS.get(sender, "⚪")
-    badge = INTENT_BADGES.get(intent, "💬")
-    color = AGENT_COLORS.get(sender, "#aaa")
+    icon  = AGENT_ICONS.get(sender, "●")
+    badge = INTENT_BADGES.get(intent, intent)
 
     st.markdown(
         f"""
-        <div style="
-            border-left: 4px solid {color};
-            padding: 8px 12px;
-            margin: 6px 0;
-            background: #111827;
-            border-radius: 4px;
-        ">
-        <span style="color:{color}; font-weight:bold;">{icon} {sender.upper()}</span>
-        <span style="color:#888;"> → </span>
-        <span style="color:#ccc;">{receiver}</span>
-        <span style="float:right; color:#555; font-size:11px;">{ts} {badge} {intent}</span>
+        <div class="msg-card agent-{sender}">
+          <div class="msg-header">
+            <span>
+              <span class="msg-sender">{icon} {sender.upper()}</span>
+              <span class="msg-arrow">→</span>
+              <span class="msg-receiver">{receiver}</span>
+            </span>
+            <span class="msg-meta">{ts} · {badge}</span>
+          </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -127,88 +81,98 @@ def render_message_card(msg: dict):
                 st.markdown(f"**{k}:** {v}")
 
 
+def render_clinical_brief(brief: dict):
+    text         = brief.get("clinical_brief", "")
+    missed       = brief.get("missed_medications", [])
+    interactions = brief.get("interactions", [])
+
+    if "Priority: HIGH" in text:
+        priority = "HIGH"
+    elif "Priority: MEDIUM" in text:
+        priority = "MEDIUM"
+    else:
+        priority = "LOW"
+
+    priority_cls = f"priority-{priority.lower()}"
+
+    st.markdown(
+        f"""
+        <div class="brief-card {priority_cls}">
+          <div class="brief-label">Clinical Brief — Patient {PATIENT_ID} · {priority}</div>
+          <pre>{text}</pre>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if missed:
+        st.error("**Missed medications:** " + " · ".join(missed))
+    if interactions:
+        st.warning("**Drug interactions:** " + " · ".join(interactions))
+    else:
+        st.success("No drug interactions flagged.")
+
+
 def main():
     st.set_page_config(
         page_title="ICU Triage Agent",
         page_icon="🏥",
-        layout="wide",
+        layout="centered",
     )
+    _load_css()
 
-    st.title("ICU Autonomous Triage & Handoff Agent")
+    # ── Header ──────────────────────────────────────────────────────────
+    st.title("ICU Triage Agent")
     st.caption(f"Patient **{PATIENT_ID}** · ICU Bed 4B · 67M · Admitted: CHF")
 
-    col_vitals, col_log, col_brief = st.columns([1, 1.2, 1])
+    # ── Vitals chart ─────────────────────────────────────────────────────
+    df = build_vitals_dataframe()
+    st.line_chart(df[["spo2", "hr"]], color=["#4FC3F7", "#f85149"])
 
-    with col_vitals:
-        st.subheader("Live Vitals — Patient 4B")
-        df = build_vitals_dataframe()
-        st.line_chart(df[["spo2", "hr"]], color=["#4FC3F7", "#FF6B6B"])
+    latest = df.iloc[-1]
+    c1, c2, c3 = st.columns(3)
+    c1.metric("SpO₂", f"{int(latest['spo2'])}%",
+              delta=f"{int(latest['spo2']) - int(df.iloc[0]['spo2'])}%")
+    c2.metric("HR", f"{int(latest['hr'])} bpm",
+              delta=f"{int(latest['hr']) - int(df.iloc[0]['hr'])} bpm")
+    c3.metric("BP", latest["bp"])
 
-        st.markdown("**Latest readings:**")
-        latest = df.iloc[-1]
-        c1, c2, c3 = st.columns(3)
-        c1.metric("SpO₂", f"{int(latest['spo2'])}%", delta=f"{int(latest['spo2']) - int(df.iloc[0]['spo2'])}%")
-        c2.metric("HR", f"{int(latest['hr'])} bpm", delta=f"{int(latest['hr']) - int(df.iloc[0]['hr'])} bpm")
-        c3.metric("BP", latest["bp"])
+    st.divider()
 
-        st.markdown("---")
-        run_btn = st.button("Run Triage", use_container_width=True, type="primary")
+    # ── Trigger ──────────────────────────────────────────────────────────
+    run_btn = st.button("Run Triage", use_container_width=True, type="primary")
 
-    with col_log:
-        st.subheader("Agent Conversation Log")
-        log_placeholder = st.empty()
+    # ── Output areas ─────────────────────────────────────────────────────
+    log_container   = st.container()
+    brief_container = st.container()
 
-    with col_brief:
-        st.subheader("Clinical Brief")
-        brief_placeholder = st.empty()
+    if not run_btn:
+        return
 
-    if run_btn:
-        if not os.getenv("GROQ_API_KEY"):
-            st.error("GROQ_API_KEY not found. Add it to your .env file.")
-            return
+    if not os.getenv("GROQ_API_KEY"):
+        st.error("GROQ_API_KEY not found. Add it to your .env file.")
+        return
 
-        messages_so_far = []
-        brief_result = None
+    messages_so_far: list[dict] = []
 
-        def on_message(msg: A2AMessage):
-            messages_so_far.append(msg.to_dict())
+    def on_message(msg: A2AMessage):
+        messages_so_far.append(msg.to_dict())
+        with log_container:
+            render_message_card(messages_so_far[-1])
+        if msg.intent == "clinical_brief":
+            with brief_container:
+                st.markdown('<p class="section-label">Clinical Brief</p>',
+                            unsafe_allow_html=True)
+                render_clinical_brief(msg.payload)
 
-            with log_placeholder.container():
-                for m in messages_so_far:
-                    render_message_card(m)
-
-            if msg.intent == "clinical_brief":
-                with brief_placeholder.container():
-                    render_clinical_brief(msg.payload)
-
-        status_map = {
-            "sentry": "Sentry analyzing vitals...",
-            "historian": "Historian querying EMR records...",
-            "pharmacist": "Pharmacist reviewing medications...",
-        }
-
+    with st.spinner("Running triage..."):
         orchestrator = Orchestrator(on_message=on_message)
+        result = asyncio.run(orchestrator.run_triage(PATIENT_ID))
 
-        with col_vitals:
-            with st.spinner("Running multi-agent triage..."):
-                with col_log:
-                    for agent_name, status_msg in status_map.items():
-                        col_log.info(f"⏳ {status_msg}")
+    if not result.get("clinical_brief"):
+        brief_container.warning("No clinical brief generated — check agent logs.")
 
-                result = asyncio.run(orchestrator.run_triage(PATIENT_ID))
-
-        with log_placeholder.container():
-            for m in result["messages"]:
-                render_message_card(m)
-
-        if result.get("clinical_brief"):
-            with brief_placeholder.container():
-                render_clinical_brief(result["clinical_brief"])
-        else:
-            brief_placeholder.warning("No clinical brief generated — check agent logs.")
-
-        with col_vitals:
-            st.success(f"Triage complete. {len(result['messages'])} messages exchanged.")
+    st.caption(f"Triage complete · {len(result['messages'])} messages")
 
 
 if __name__ == "__main__":

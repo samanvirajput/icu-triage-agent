@@ -1,0 +1,117 @@
+/* ─── Design tokens ────────────────────────────────────────────────────── */
+:root {
+  --sentry:          #4FC3F7;
+  --historian:       #81C784;
+  --pharmacist:      #FFB74D;
+
+  --priority-high:   #f85149;
+  --priority-medium: #d29922;
+  --priority-low:    #3fb950;
+
+  --bg-page:         #0d1117;
+  --bg-card:         #161b22;
+  --bg-brief:        #1c2128;
+  --border:          #30363d;
+
+  --text-primary:    #e6edf3;
+  --text-muted:      #8b949e;
+  --text-dim:        #484f58;
+}
+
+/* ─── Page layout ──────────────────────────────────────────────────────── */
+.block-container {
+  max-width: 780px !important;
+  padding-top: 2rem !important;
+  padding-bottom: 3rem !important;
+}
+
+/* ─── Typography overrides ─────────────────────────────────────────────── */
+h1 { font-size: 1.4rem !important; font-weight: 700 !important; letter-spacing: -0.01em; }
+h2, h3 { color: var(--text-primary) !important; font-weight: 600 !important; }
+hr { border-color: var(--border) !important; margin: 1.5rem 0 !important; }
+
+/* ─── Section label (used above the log and brief areas) ───────────────── */
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 24px 0 10px;
+}
+
+/* ─── Agent message card ───────────────────────────────────────────────── */
+.msg-card {
+  border-left: 3px solid var(--border);
+  padding: 10px 14px;
+  margin: 6px 0;
+  background: var(--bg-card);
+  border-radius: 6px;
+}
+.msg-card.agent-sentry     { border-left-color: var(--sentry); }
+.msg-card.agent-historian  { border-left-color: var(--historian); }
+.msg-card.agent-pharmacist { border-left-color: var(--pharmacist); }
+
+.msg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.msg-sender { font-weight: 600; font-size: 13px; }
+.agent-sentry     .msg-sender { color: var(--sentry); }
+.agent-historian  .msg-sender { color: var(--historian); }
+.agent-pharmacist .msg-sender { color: var(--pharmacist); }
+
+.msg-arrow    { color: var(--text-dim); margin: 0 5px; }
+.msg-receiver { color: var(--text-muted); font-size: 13px; }
+.msg-meta     { color: var(--text-dim); font-size: 11px; }
+
+/* ─── Clinical brief card ──────────────────────────────────────────────── */
+.brief-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  background: var(--bg-brief);
+  margin-top: 8px;
+}
+.brief-card.priority-high   { border-color: var(--priority-high); }
+.brief-card.priority-medium { border-color: var(--priority-medium); }
+.brief-card.priority-low    { border-color: var(--priority-low); }
+
+.brief-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  color: var(--text-muted);
+}
+.brief-card.priority-high   .brief-label { color: var(--priority-high); }
+.brief-card.priority-medium .brief-label { color: var(--priority-medium); }
+.brief-card.priority-low    .brief-label { color: var(--priority-low); }
+
+.brief-card pre {
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  margin: 0;
+  line-height: 1.7;
+}
+
+/* ─── Streamlit widget tweaks ──────────────────────────────────────────── */
+/* Primary button */
+div.stButton > button[kind="primary"] {
+  background-color: var(--sentry);
+  border: none;
+  color: #0d1117;
+  font-weight: 600;
+  border-radius: 6px;
+}
+div.stButton > button[kind="primary"]:hover {
+  background-color: #79d4f5;
+  color: #0d1117;
+}
+
+/* Metric delta colours */
+[data-testid="stMetricDelta"] svg { display: none; }
